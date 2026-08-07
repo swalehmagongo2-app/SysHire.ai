@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syshire — Deploy AI Departments in Minutes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+              400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+              800: '#3730a3', 900: '#312e81', 950: '#1e1b4b'
+            }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgb(99 102 241 / 0.25); }
+    .gradient-bg { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%); }
+    .animate-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <div id="app"></div>
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
+
+  <script>
+    // ===================== DATA =====================
+    const DEPARTMENTS = {
+      sales: {
+        id: 'sales', name: 'Sales', icon: '📈', color: 'bg-blue-500',
+        description: 'Qualify leads, draft proposals, manage pipeline and book meetings automatically.',
+        employees: [
+          { id: 'sales-rep', name: 'AI Sales Representative', role: 'Outreach & closing' },
+          { id: 'lead-qualifier', name: 'AI Lead Qualifier', role: 'Scoring & routing' },
+          { id: 'proposal-writer', name: 'AI Proposal Writer', role: 'Custom proposals' }
+        ],
+        capabilities: ['Respond to leads', 'Draft proposals', 'Qualify prospects', 'Manage pipeline', 'Schedule meetings']
+      },
+      support: {
+        id: 'support', name: 'Customer Support', icon: '🎧', color: 'bg-emerald-500',
+        description: 'Answer questions, resolve tickets, escalate intelligently and summarize conversations.',
+        employees: [
+          { id: 'support-agent', name: 'AI Support Agent', role: 'Front-line support' },
+          { id: 'ticket-assistant', name: 'AI Ticket Assistant', role: 'Ticket triage' },
+          { id: 'faq-assistant', name: 'AI FAQ Assistant', role: 'Knowledge base' }
+        ],
+        capabilities: ['Answer customer questions', 'Resolve tickets', 'Escalate issues', 'Generate support summaries']
+      },
+      marketing: {
+        id: 'marketing', name: 'Marketing', icon: '🚀', color: 'bg-pink-500',
+        description: 'Create content, plan campaigns, write posts and generate ideas at scale.',
+        employees: [
+          { id: 'content-creator', name: 'AI Content Creator', role: 'Copy & assets' },
+          { id: 'campaign-planner', name: 'AI Campaign Planner', role: 'Strategy' },
+          { id: 'social-assistant', name: 'AI Social Media Assistant', role: 'Social presence' }
+        ],
+        capabilities: ['Create marketing copy', 'Generate campaigns', 'Write blog posts', 'Suggest content ideas']
+      },
+      hr: {
+        id: 'hr', name: 'HR', icon: '👥', color: 'bg-amber-500',
+        description: 'Screen candidates, schedule interviews, answer employee questions and draft documents.',
+        employees: [
+          { id: 'recruiter', name: 'AI Recruiter', role: 'Sourcing & screening' },
+          { id: 'interview-scheduler', name: 'AI Interview Scheduler', role: 'Scheduling' },
+          { id: 'employee-assistant', name: 'AI Employee Assistant', role: 'Internal helpdesk' }
+        ],
+        capabilities: ['Screen candidates', 'Schedule interviews', 'Answer employee questions', 'Draft HR documents']
+      },
+      finance: {
+        id: 'finance', name: 'Finance', icon: '💰', color: 'bg-violet-500',
+        description: 'Generate invoices, track expenses, build reports and perform budget analysis.',
+        employees: [
+          { id: 'invoice-assistant', name: 'AI Invoice Assistant', role: 'Invoicing' },
+          { id: 'budget-assistant', name: 'AI Budget Assistant', role: 'Budgeting' },
+          { id: 'expense-manager', name: 'AI Expense Manager', role: 'Expense tracking' }
+        ],
+        capabilities: ['Generate invoices', 'Track expenses', 'Build reports', 'Budget analysis']
+      },
+      operations: {
+        id: 'operations', name: 'Operations', icon: '⚙️', color: 'bg-slate-600',
+        description: 'Assign tasks, coordinate teams, summarize meetings and monitor workflows.',
+        employees: [
+          { id: 'workflow-manager', name: 'AI Workflow Manager', role: 'Process orchestration' },
+          { id: 'meeting-assistant', name: 'AI Meeting Assistant', role: 'Meeting intelligence' },
+          { id: 'task-coordinator', name: 'AI Task Coordinator', role: 'Task management' }
+        ],
+        capabilities: ['Assign tasks', 'Coordinate teams', 'Summarize meetings', 'Monitor workflows']
+      }
+    };
+
+    const PLANS = {
+      free: { id: 'free', name: 'Free', price: 0, depts: 1, employees: 3, features: ['1 Department', '3 AI Employees', 'Limited Monthly Usage', 'Community Support'] },
+      starter: { id: 'starter', name: 'Starter', price: 99, depts: 3, employees: 15, features: ['3 Departments', '15 AI Employees', 'Unlimited Projects', 'Email Support'] },
+      growth: { id: 'growth', name: 'Growth', price: 499, depts: 10, employees: 50, features: ['10 Departments', '50 AI Employees', 'Priority Support', 'Advanced Analytics'] },
+      business: { id: 'business', name: 'Business', price: 1999, depts: 999, employees: 9999, features: ['Unlimited Departments', 'Unlimited AI Employees', 'Custom Workflows', 'Advanced Security'] },
+      enterprise: { id: 'enterprise', name: 'Enterprise', price: null, depts: 9999, employees: 99999, features: ['Private Cloud', 'Custom AI Models', 'Dedicated Support', 'SSO & Audit Logs'] }
+    };
+
+    const INDUSTRIES = ['Technology & Professional Services'];
+    const SIZES = ['5-10', '11-50', '51-200', '201-500'];
+    const TIMEZONES = ['UTC', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Singapore', 'Australia/Sydney', 'Africa/Nairobi'];
+    const INTEGRATIONS = [
+      { id: 'gws', name: 'Google Workspace', icon: '📧', status: 'available' },
+      { id: 'teams', name: 'Microsoft Teams', icon: '💬', status: 'available' },
+      { id: 'slack', name: 'Slack', icon: '⚡', status: 'available' },
+      { id: 'gcal', name: 'Google Calendar', icon: '📅', status: 'available' },
+      { id: 'email', name: 'Email (SMTP)', icon: '✉️', status: 'available' }
+    ];
+
+    // ===================== STORE =====================
+    const store = {
+      key: 'syshire_v1',
+      get() {
+        try { return JSON.parse(localStorage.getItem(this.key)) || {}; }
+        catch { return {}; }
+      },
+      set(data) { localStorage.setItem(this.key, JSON.stringify(data)); },
+      users() { return this.get().users || {}; },
+      saveUsers(u) { const s = this.get(); s.users = u; this.set(s); },
+      company() { return this.get().company || null; },
+      saveCompany(c) { const s = this.get(); s.company = c; this.set(s); },
+      session() { return this.get().session || null; },
+      login(email) {
+        const s = this.get();
+        s.session = { email, loggedInAt: Date.now() };
+        this.set(s);
+      },
+      logout() {
+        const s = this.get();
+        delete s.session;
+        this.set(s);
+      },
+      isLoggedIn() { return !!this.session(); },
+      addNotification(msg, type = 'info') {
+        const c = this.company();
+        if (!c) return;
+        c.notifications = c.notifications || [];
+        c.notifications.unshift({ id: Date.now(), msg, type, time: new Date().toISOString(), read: false });
+        if (c.notifications.length > 50) c.notifications = c.notifications.slice(0, 50);
+        this.saveCompany(c);
+      },
+      markNotificationsRead() {
+        const c = this.company();
+        if (!c || !c.notifications) return;
+        c.notifications.forEach(n => n.read = true);
+        this.saveCompany(c);
+      },
+      recordTask(deptId, description) {
+        const c = this.company();
+        if (!c) return;
+        c.tasks = c.tasks || [];
+        c.tasks.unshift({ id: Date.now(), dept: deptId, description, time: new Date().toISOString() });
+        c.stats = c.stats || { tasksCompleted: 0, hoursSaved: 0, moneySaved: 0 };
+        c.stats.tasksCompleted += 1;
+        c.stats.hoursSaved += Math.round((0.5 + Math.random() * 1.5) * 10) / 10;
+        c.stats.moneySaved += Math.round(15 + Math.random() * 40);
+        this.saveCompany(c);
+      }
+    };
+
+    function defaultCompany() {
+      return {
+        name: '', email: '', industry: '', size: '', country: '', timezone: 'UTC', website: '',
+        plan: 'free', deployed: [], team: [], integrations: [],
+        notifications: [], tasks: [],
+        stats: { tasksCompleted: 0, hoursSaved: 0, moneySaved: 0 },
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    // ===================== ROUTER =====================
+    let currentView = 'landing';
+    let viewParams = {};
+
+    function navigate(view, params = {}) {
+      currentView = view;
+      viewParams = params;
+      const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+      window.location.hash = view + qs;
+      render();
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1) || 'landing';
+      const [view, qs] = hash.split('?');
+      currentView = view || 'landing';
+      viewParams = Object.fromEntries(new URLSearchParams(qs || ''));
+      render();
+    });
+
+    // ===================== UI HELPERS =====================
+    function toast(msg, type = 'success') {
+      const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-brand-600' };
+      const el = document.createElement('div');
+      el.className = `${colors[type] || colors.info} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-in max-w-sm`;
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3200);
+    }
+
+    function formatMoney(n) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n); }
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = (now - d) / 1000;
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return d.toLocaleDateString();
+    }
+
+    // ===================== LAYOUT =====================
+    function AppShell(content, activeNav = 'dashboard') {
+      const c = store.company();
+      const unread = (c?.notifications || []).filter(n => !n.read).length;
+      const navItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'departments', label: 'Departments', icon: '🏢' },
+        { id: 'billing', label: 'Billing', icon: '💳' },
+        { id: 'integrations', label: 'Integrations', icon: '🔌' },
+        { id: 'admin', label: 'Admin', icon: '🛡️' },
+        { id: 'settings', label: 'Settings', icon: '⚙️' }
+      ];
+
+      return `
+        <div class="min-h-screen flex flex-col pb-16 md:pb-0">
+          <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <button onclick="navigate('dashboard')" class="flex items-center gap-2 font-bold text-xl text-brand-700">
+                  <span class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center text-white text-sm">S</span>
+                  Syshire
+                </button>
+                <span class="hidden sm:inline text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-medium">${(PLANS[c?.plan] || PLANS.free).name}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <button onclick="navigate('notifications')" class="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600">
+                  🔔
+                  ${unread ? `<span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">${unread > 9 ? '9+' : unread}</span>` : ''}
+                </button>
+                <div class="hidden sm:flex items-center gap-2 text-sm text-slate-600">
+                  <span class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-semibold text-xs">${(c?.name || 'C')[0].toUpperCase()}</span>
+                  <span class="font-medium truncate max-w-[120px]">${c?.name || 'Company'}</span>
+                </div>
+                <button onclick="store.logout(); navigate('landing'); toast('Logged out');" class="text-sm text-slate-500 hover:text-red-600 px-2">Logout</button>
+              </div>
+            </div>
+          </header>
+
+          <div class="flex-1 flex max-w-7xl mx-auto w-full">
+            <aside class="hidden md:block w-56 border-r border-slate-200 bg-white py-6 px-3 shrink-0">
+              <nav class="space-y-1">
+                ${navItems.map(item => `
+                  <button onclick="navigate('${item.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition
+                    ${activeNav === item.id ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'}">
+                    <span>${item.icon}</span> ${item.label}
+                  </button>
+                `).join('')}
+              </nav>
+              <div class="mt-8 px-3">
+                <button onclick="navigate('departments')" class="w-full gradient-bg text-white text-sm font-semibold py-2.5 rounded-xl hover:opacity-90 transition">
+                  + Deploy Department
+                </button>
+              </div>
+            </aside>
+
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+              <div class="animate-in">${content}</div>
+            </main>
+          </div>
+
+          <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-2 z-40">
+            ${navItems.slice(0, 5).map(item => `
+              <button onclick="navigate('${item.id}')" class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs ${activeNav === item.id ? 'text-brand-600' : 'text-slate-500'}">
+                <span class="text-lg">${item.icon}</span>
+                <span>${item.label.split(' ')[0]}</span>
+              </button>
+            `).join('')}
+          </nav>
+        </div>
+      `;
+    }
+
+    // ===================== VIEWS =====================
+    function Landing() {
+      return `
+        <div class="min-h-screen">
+          <header class="absolute top-0 left-0 right-0 z-10">
+            <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+              <div class="flex items-center gap-2 font-bold text-xl text-white">
+                <span class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm">S</span> Syshire
+              </div>
+              <div class="flex gap-3">
+                <button onclick="navigate('login')" class="text-white/90 hover:text-white text-sm font-medium px-4 py-2">Log in</button>
+                <button onclick="navigate('signup')" class="bg-white text-brand-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-50">Get Started</button>
+              </div>
+            </div>
+          </header>
+
+          <section class="gradient-bg text-white pt-28 pb-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+              <div class="inline-flex items-center gap-2 bg-white/10 text-white/90 text-xs font-medium px-3 py-1 rounded-full mb-6">
+                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-dot"></span> AI Departments • Live Now
+              </div>
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+                Deploy AI Departments<br>in Minutes
+              </h1>
+              <p class="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10">
+                Stop configuring individual AI tools. Launch complete AI-powered departments — Sales, Support, Marketing, HR, Finance & Operations — ready to work for your company.
+              </p>
+              <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="navigate('signup')" class="bg-white text-brand-700 font-bold px-8 py-3.5 rounded-xl text-base hover:bg-brand-50 shadow-lg">
+                  Start Free →
+                </button>
+                <button onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})" class="border border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/10">
+                  See how it works
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section id="how" class="py-20 px-6 bg-white">
+            <div class="max-w-6xl mx-auto">
+              <h2 class="text-3xl font-bold text-center mb-4">How Syshire works</h2>
+              <p class="text-slate-500 text-center max-w-xl mx-auto mb-14">From signup to deployed AI workforce in under 5 minutes.</p>
+              <div class="grid md:grid-cols-4 gap-8">
+                ${[
+                  { step: '1', title: 'Create account', desc: 'Sign up with your company email in seconds.' },
+                  { step: '2', title: 'Setup company', desc: 'Tell us industry, size and timezone.' },
+                  { step: '3', title: 'Choose departments', desc: 'Pick Sales, Support, Marketing and more.' },
+                  { step: '4', title: 'Deploy & work', desc: 'AI employees start handling tasks immediately.' }
+                ].map(s => `
+                  <div class="text-center">
+                    <div class="w-12 h-12 gradient-bg text-white rounded-2xl flex items-center justify-center text-lg font-bold mx-auto mb-4">${s.step}</div>
+                    <h3 class="font-semibold mb-2">${s.title}</h3>
+                    <p class="text-sm text-slate-500">${s.desc}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </section>
+
+          <section class="py-20 px-6 bg-slate-50">
+            <div class="max-w-6xl mx-auto">
+              <h2 class="text-3xl font-bold text-center mb-12">AI Departments ready to deploy</h2>
+              <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${Object.values(DEPARTMENTS).map(d => `
+                  <div class="bg-white rounded-2xl p-6 border border-slate-200 card-hover">
+                    <div class="text-3xl mb-3">${d.icon}</div>
+                    <h3 class="font-bold text-lg mb-1">${d.name}</h3>
+                    <p class="text-sm text-slate-500 mb-4">${d.description}</p>
+                    <div class="flex flex-wrap gap-1.5">
+                      ${d.employees.map(e => `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${e.name.replace('AI ','')}</span>`).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </section>
+
+          <section class="py-20 px-6 bg-white">
+            <div class="max-w-4xl mx-auto text-center">
+              <h2 class="text-3xl font-bold mb-4">Simple pricing</h2>
+              <p class="text-slate-500 mb-10">Start free. Scale as you grow.</p>
+              <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+                ${['free','starter','growth','business'].map(pid => {
+                  const p = PLANS[pid];
+                  return `
+                    <div class="border ${pid==='starter'?'border-brand-500 ring-2 ring-brand-100':'border-slate-200'} rounded-2xl p-5">
+                      <div class="font-bold text-lg">${p.name}</div>
+                      <div class="mt-1 mb-3">
+                        ${p.price === 0 ? '<span class="text-2xl font-bold">$0</span>' : p.price ? `<span class="text-2xl font-bold">$${p.price}</span><span class="text-slate-400 text-sm">/mo</span>` : '<span class="text-lg font-bold">Custom</span>'}
+                      </div>
+                      <ul class="space-y-1.5 text-sm text-slate-600 mb-4">
+                        ${p.features.map(f => `<li class="flex gap-2"><span class="text-emerald-500">✓</span>${f}</li>`).join('')}
+                      </ul>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <button onclick="navigate('signup')" class="mt-10 gradient-bg text-white font-bold px-8 py-3.5 rounded-xl hover:opacity-90">
+                Get started free
+              </button>
+            </div>
+          </section>
+
+          <footer class="border-t border-slate-200 py-10 px-6 text-center text-sm text-slate-500">
+            <div class="font-bold text-brand-700 text-lg mb-2">Syshire</div>
+            Deploy AI Departments in Minutes. · MVP V1 · © 2026
+          </footer>
+        </div>
+      `;
+    }
+
+    function AuthLayout(title, subtitle, formHtml) {
+      return `
+        <div class="min-h-screen flex">
+          <div class="hidden lg:flex w-1/2 gradient-bg text-white p-12 flex-col justify-between">
+            <div class="flex items-center gap-2 font-bold text-xl">
+              <span class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm">S</span> Syshire
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold mb-4">Deploy AI Departments<br>in Minutes</h2>
+              <p class="text-white/70 max-w-sm">The operating layer for AI inside every business. Launch complete AI teams that work together across departments.</p>
+            </div>
+            <div class="text-sm text-white/50">MVP V1 · Technology & Professional Services</div>
+          </div>
+          <div class="flex-1 flex items-center justify-center p-6 sm:p-12">
+            <div class="w-full max-w-md">
+              <div class="lg:hidden flex items-center gap-2 font-bold text-xl text-brand-700 mb-8">
+                <span class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center text-white text-sm">S</span> Syshire
+              </div>
+              <h1 class="text-2xl font-bold mb-1">${title}</h1>
+              <p class="text-slate-500 mb-8">${subtitle}</p>
+              ${formHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function Signup() {
+      return AuthLayout('Create your account', 'Start deploying AI departments today.', `
+        <form id="signup-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Company Name</label>
+            <input name="company" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="Acme Inc." />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Company Email</label>
+            <input name="email" type="email" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="you@company.com" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Password</label>
+            <input name="password" type="password" required minlength="6" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="At least 6 characters" />
+          </div>
+          <button type="submit" class="w-full gradient-bg text-white font-semibold py-3 rounded-xl hover:opacity-90 transition">Create Account</button>
+        </form>
+        <p class="mt-6 text-center text-sm text-slate-500">
+          Already have an account? <button onclick="navigate('login')" class="text-brand-600 font-medium hover:underline">Log in</button>
+        </p>
+      `);
+    }
+
+    function Login() {
+      return AuthLayout('Welcome back', 'Log in to your Syshire workspace.', `
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Company Email</label>
+            <input name="email" type="email" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="you@company.com" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Password</label>
+            <input name="password" type="password" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" />
+          </div>
+          <button type="submit" class="w-full gradient-bg text-white font-semibold py-3 rounded-xl hover:opacity-90 transition">Log in</button>
+        </form>
+        <p class="mt-6 text-center text-sm text-slate-500">
+          New to Syshire? <button onclick="navigate('signup')" class="text-brand-600 font-medium hover:underline">Create account</button>
+        </p>
+      `);
+    }
+
+    function Setup() {
+      const c = store.company() || defaultCompany();
+      return AppShell(`
+        <div class="max-w-xl mx-auto">
+          <div class="mb-8">
+            <div class="text-sm font-medium text-brand-600 mb-1">Step 2 of 3</div>
+            <h1 class="text-2xl font-bold">Complete company setup</h1>
+            <p class="text-slate-500 mt-1">Tell us a bit about your company so we can tailor the AI departments.</p>
+          </div>
+          <form id="setup-form" class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Company Name</label>
+              <input name="name" required value="${c.name || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Industry</label>
+              <select name="industry" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <option value="">Select industry</option>
+                ${INDUSTRIES.map(i => `<option value="${i}" ${c.industry===i?'selected':''}>${i}</option>`).join('')}
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Company Size</label>
+                <select name="size" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option value="">Select</option>
+                  ${SIZES.map(s => `<option value="${s}" ${c.size===s?'selected':''}>${s} employees</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Country</label>
+                <input name="country" required value="${c.country || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="United States" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Time Zone</label>
+              <select name="timezone" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                ${TIMEZONES.map(t => `<option value="${t}" ${c.timezone===t?'selected':''}>${t}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Business Website <span class="text-slate-400">(optional)</span></label>
+              <input name="website" value="${c.website || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="https://company.com" />
+            </div>
+            <button type="submit" class="w-full gradient-bg text-white font-semibold py-3 rounded-xl hover:opacity-90">Continue →</button>
+          </form>
+        </div>
+      `, 'settings');
+    }
+
+    function Departments() {
+      const c = store.company();
+      if (!c) return '';
+      const plan = PLANS[c.plan] || PLANS.free;
+      return AppShell(`
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold">Department Marketplace</h1>
+            <p class="text-slate-500 mt-1">Deploy AI departments for your ${c.industry || 'company'}.</p>
+          </div>
+          <div class="text-sm bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full font-medium">
+            ${c.deployed.length} / ${plan.depts === 999 || plan.depts > 100 ? '∞' : plan.depts} departments used
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          ${Object.values(DEPARTMENTS).map(d => {
+            const deployed = c.deployed.includes(d.id);
+            const atLimit = c.deployed.length >= plan.depts && !deployed;
+            return `
+              <div class="bg-white rounded-2xl border ${deployed ? 'border-emerald-200 ring-1 ring-emerald-100' : 'border-slate-200'} p-6 card-hover flex flex-col">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="text-3xl">${d.icon}</div>
+                  ${deployed ? '<span class="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">Deployed</span>' : ''}
+                </div>
+                <h3 class="font-bold text-lg">${d.name}</h3>
+                <p class="text-sm text-slate-500 mt-1 mb-4 flex-1">${d.description}</p>
+                <div class="text-xs text-slate-400 mb-3">${d.employees.length} AI Employees included</div>
+                <div class="flex flex-wrap gap-1.5 mb-5">
+                  ${d.employees.map(e => `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${e.name.replace('AI ','')}</span>`).join('')}
+                </div>
+                ${deployed
+                  ? `<button onclick="navigate('department', {id:'${d.id}'})" class="w-full border border-slate-200 text-slate-700 font-medium py-2.5 rounded-xl hover:bg-slate-50">View Department</button>`
+                  : atLimit
+                    ? `<button onclick="navigate('billing')" class="w-full bg-slate-100 text-slate-500 font-medium py-2.5 rounded-xl cursor-not-allowed">Upgrade to deploy</button>`
+                    : `<button onclick="deployDept('${d.id}')" class="w-full gradient-bg text-white font-semibold py-2.5 rounded-xl hover:opacity-90">Deploy Department</button>`
+                }
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `, 'departments');
+    }
+
+    function DepartmentDetail() {
+      const c = store.company();
+      const d = DEPARTMENTS[viewParams.id];
+      if (!c || !d) { navigate('departments'); return ''; }
+      const deployed = c.deployed.includes(d.id);
+      return AppShell(`
+        <button onclick="navigate('departments')" class="text-sm text-brand-600 font-medium mb-4 hover:underline">← Back to Departments</button>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="p-6 sm:p-8 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="text-4xl">${d.icon}</div>
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold">${d.name} Department</h1>
+              <p class="text-slate-500 mt-1">${d.description}</p>
+            </div>
+            ${deployed
+              ? '<span class="text-sm font-semibold bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">● Active</span>'
+              : `<button onclick="deployDept('${d.id}')" class="gradient-bg text-white font-semibold px-5 py-2.5 rounded-xl">Deploy Now</button>`
+            }
+          </div>
+          <div class="p-6 sm:p-8 grid lg:grid-cols-2 gap-8">
+            <div>
+              <h2 class="font-semibold mb-4">AI Employees</h2>
+              <div class="space-y-3">
+                ${d.employees.map(e => `
+                  <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-sm">${e.name.split(' ').pop()[0]}</div>
+                    <div>
+                      <div class="font-medium text-sm">${e.name}</div>
+                      <div class="text-xs text-slate-500">${e.role}</div>
+                    </div>
+                    ${deployed ? '<span class="ml-auto text-xs text-emerald-600 font-medium">Online</span>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div>
+              <h2 class="font-semibold mb-4">Capabilities</h2>
+              <ul class="space-y-2">
+                ${d.capabilities.map(cap => `
+                  <li class="flex items-center gap-2 text-sm text-slate-700">
+                    <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
+                    ${cap}
+                  </li>
+                `).join('')}
+              </ul>
+              ${deployed ? `
+                <div class="mt-8">
+                  <h2 class="font-semibold mb-3">Simulate a task</h2>
+                  <button onclick="simulateTask('${d.id}')" class="w-full border border-brand-200 text-brand-700 font-medium py-2.5 rounded-xl hover:bg-brand-50">
+                    Run sample AI task →
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `, 'departments');
+    }
+
+    function Dashboard() {
+      const c = store.company();
+      if (!c) return '';
+      const plan = PLANS[c.plan] || PLANS.free;
+      const totalEmployees = c.deployed.reduce((sum, id) => sum + (DEPARTMENTS[id]?.employees.length || 0), 0);
+      const stats = c.stats || { tasksCompleted: 0, hoursSaved: 0, moneySaved: 0 };
+      const recentTasks = (c.tasks || []).slice(0, 5);
+      const unread = (c.notifications || []).filter(n => !n.read).length;
+
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Welcome back, ${c.name || 'there'}</h1>
+          <p class="text-slate-500 mt-1">Here's how your AI departments are performing.</p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          ${[
+            { label: 'Active Departments', value: c.deployed.length, icon: '🏢' },
+            { label: 'AI Employees', value: totalEmployees, icon: '🤖' },
+            { label: 'Tasks Completed', value: stats.tasksCompleted, icon: '✅' },
+            { label: 'Hours Saved', value: stats.hoursSaved.toFixed(1), icon: '⏱️' }
+          ].map(s => `
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="text-2xl mb-2">${s.icon}</div>
+              <div class="text-2xl font-bold">${s.value}</div>
+              <div class="text-xs text-slate-500 mt-1">${s.label}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold">Active Departments</h2>
+                <button onclick="navigate('departments')" class="text-sm text-brand-600 font-medium hover:underline">Manage</button>
+              </div>
+              ${c.deployed.length === 0
+                ? `<div class="text-center py-10 text-slate-400">
+                    <div class="text-4xl mb-3">🏢</div>
+                    <p class="mb-4">No departments deployed yet</p>
+                    <button onclick="navigate('departments')" class="gradient-bg text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Deploy your first department</button>
+                  </div>`
+                : `<div class="grid sm:grid-cols-2 gap-3">
+                    ${c.deployed.map(id => {
+                      const d = DEPARTMENTS[id];
+                      return `
+                        <button onclick="navigate('department', {id:'${id}'})" class="flex items-center gap-3 p-4 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/50 transition text-left">
+                          <span class="text-2xl">${d.icon}</span>
+                          <div>
+                            <div class="font-medium text-sm">${d.name}</div>
+                            <div class="text-xs text-slate-500">${d.employees.length} AI employees</div>
+                          </div>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>`
+              }
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold">Recent AI Tasks</h2>
+                ${c.deployed.length >= 2 ? `<button onclick="runWorkflow()" class="text-sm text-brand-600 font-medium hover:underline">Run cross-dept workflow</button>` : ''}
+              </div>
+              ${recentTasks.length === 0
+                ? `<p class="text-sm text-slate-400 py-6 text-center">No tasks yet. Deploy departments and simulate work.</p>`
+                : `<div class="space-y-3">
+                    ${recentTasks.map(t => `
+                      <div class="flex items-start gap-3 text-sm">
+                        <span class="text-lg">${DEPARTMENTS[t.dept]?.icon || '•'}</span>
+                        <div class="flex-1">
+                          <div class="font-medium">${t.description}</div>
+                          <div class="text-xs text-slate-400">${formatDate(t.time)} · ${DEPARTMENTS[t.dept]?.name || t.dept}</div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>`
+              }
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+              <h2 class="font-semibold mb-4">Impact</h2>
+              <div class="space-y-4">
+                <div>
+                  <div class="text-xs text-slate-500 mb-1">Estimated money saved</div>
+                  <div class="text-2xl font-bold text-emerald-600">${formatMoney(stats.moneySaved)}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-1">Plan</div>
+                  <div class="font-medium">${plan.name} ${plan.price ? `· $${plan.price}/mo` : ''}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 mb-1">Notifications</div>
+                  <button onclick="navigate('notifications')" class="text-sm text-brand-600 font-medium hover:underline">
+                    ${unread ? `${unread} unread` : 'All caught up'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+              <h2 class="font-semibold mb-3">Quick Actions</h2>
+              <div class="space-y-2">
+                <button onclick="navigate('departments')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">+ Deploy Department</button>
+                <button onclick="navigate('admin')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">Invite Employees</button>
+                <button onclick="navigate('billing')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">Upgrade Plan</button>
+                <button onclick="navigate('settings')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm font-medium">Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `, 'dashboard');
+    }
+
+    function Billing() {
+      const c = store.company();
+      if (!c) return '';
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Billing & Plans</h1>
+          <p class="text-slate-500 mt-1">Choose the plan that fits your AI workforce needs.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          ${Object.values(PLANS).map(p => {
+            const current = c.plan === p.id;
+            return `
+              <div class="bg-white rounded-2xl border ${current ? 'border-brand-500 ring-2 ring-brand-100' : 'border-slate-200'} p-6 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-bold text-lg">${p.name}</h3>
+                  ${current ? '<span class="text-xs font-semibold bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Current</span>' : ''}
+                </div>
+                <div class="mb-4">
+                  ${p.price === 0 ? '<span class="text-3xl font-bold">$0</span>' : p.price ? `<span class="text-3xl font-bold">$${p.price}</span><span class="text-slate-400">/mo</span>` : '<span class="text-2xl font-bold">Custom</span>'}
+                </div>
+                <ul class="space-y-2 text-sm text-slate-600 mb-6 flex-1">
+                  ${p.features.map(f => `<li class="flex gap-2"><span class="text-emerald-500 shrink-0">✓</span>${f}</li>`).join('')}
+                </ul>
+                ${current
+                  ? `<button disabled class="w-full bg-slate-100 text-slate-500 font-medium py-2.5 rounded-xl cursor-not-allowed">Current Plan</button>`
+                  : p.id === 'enterprise'
+                    ? `<button onclick="toast('Contact sales@syshire.ai for Enterprise', 'info')" class="w-full border border-slate-200 font-semibold py-2.5 rounded-xl hover:bg-slate-50">Contact Sales</button>`
+                    : `<button onclick="changePlan('${p.id}')" class="w-full gradient-bg text-white font-semibold py-2.5 rounded-xl hover:opacity-90">${p.price > (PLANS[c.plan]?.price||0) ? 'Upgrade' : 'Switch'} to ${p.name}</button>`
+                }
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `, 'billing');
+    }
+
+    function Integrations() {
+      const c = store.company();
+      if (!c) return '';
+      const connected = c.integrations || [];
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Integrations</h1>
+          <p class="text-slate-500 mt-1">Connect the tools your team already uses.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${INTEGRATIONS.map(i => {
+            const isOn = connected.includes(i.id);
+            return `
+              <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4">
+                <div class="text-3xl">${i.icon}</div>
+                <div class="flex-1">
+                  <div class="font-semibold">${i.name}</div>
+                  <div class="text-xs text-slate-500">${isOn ? 'Connected' : 'Available'}</div>
+                </div>
+                <button onclick="toggleIntegration('${i.id}')" class="text-sm font-medium px-3 py-1.5 rounded-lg ${isOn ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                  ${isOn ? 'Connected' : 'Connect'}
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `, 'integrations');
+    }
+
+    function Admin() {
+      const c = store.company();
+      if (!c) return '';
+      const team = c.team || [];
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Admin Panel</h1>
+          <p class="text-slate-500 mt-1">Manage users, departments and company settings.</p>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 class="font-semibold mb-4">Team Members</h2>
+            <form id="invite-form" class="flex gap-2 mb-4">
+              <input name="email" type="email" required placeholder="colleague@company.com" class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none" />
+              <button type="submit" class="gradient-bg text-white text-sm font-semibold px-4 py-2 rounded-xl">Invite</button>
+            </form>
+            ${team.length === 0
+              ? `<p class="text-sm text-slate-400">No team members invited yet.</p>`
+              : `<div class="space-y-2">
+                  ${team.map((m, i) => `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl text-sm">
+                      <div>
+                        <div class="font-medium">${m.email}</div>
+                        <div class="text-xs text-slate-500">${m.role} · ${formatDate(m.invitedAt)}</div>
+                      </div>
+                      <button onclick="removeTeamMember(${i})" class="text-red-500 text-xs hover:underline">Remove</button>
+                    </div>
+                  `).join('')}
+                </div>`
+            }
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 class="font-semibold mb-4">Company Overview</h2>
+            <dl class="space-y-3 text-sm">
+              <div class="flex justify-between"><dt class="text-slate-500">Company</dt><dd class="font-medium">${c.name}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">Industry</dt><dd class="font-medium">${c.industry || '—'}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">Size</dt><dd class="font-medium">${c.size || '—'} employees</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">Plan</dt><dd class="font-medium">${(PLANS[c.plan]||PLANS.free).name}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">Departments</dt><dd class="font-medium">${c.deployed.length}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">AI Employees</dt><dd class="font-medium">${c.deployed.reduce((s,id)=>s+(DEPARTMENTS[id]?.employees.length||0),0)}</dd></div>
+              <div class="flex justify-between"><dt class="text-slate-500">Created</dt><dd class="font-medium">${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</dd></div>
+            </dl>
+          </div>
+        </div>
+      `, 'admin');
+    }
+
+    function Settings() {
+      const c = store.company();
+      if (!c) return '';
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Settings</h1>
+          <p class="text-slate-500 mt-1">Manage your company profile.</p>
+        </div>
+        <form id="settings-form" class="bg-white rounded-2xl border border-slate-200 p-6 max-w-xl space-y-5">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Company Name</label>
+            <input name="name" required value="${c.name || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Industry</label>
+            <select name="industry" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              ${INDUSTRIES.map(i => `<option value="${i}" ${c.industry===i?'selected':''}>${i}</option>`).join('')}
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Company Size</label>
+              <select name="size" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                ${SIZES.map(s => `<option value="${s}" ${c.size===s?'selected':''}>${s}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5">Country</label>
+              <input name="country" value="${c.country || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Time Zone</label>
+            <select name="timezone" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              ${TIMEZONES.map(t => `<option value="${t}" ${c.timezone===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Website</label>
+            <input name="website" value="${c.website || ''}" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none" />
+          </div>
+          <button type="submit" class="gradient-bg text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90">Save Changes</button>
+        </form>
+      `, 'settings');
+    }
+
+    function Notifications() {
+      const c = store.company();
+      if (!c) return '';
+      const notes = c.notifications || [];
+      store.markNotificationsRead();
+      return AppShell(`
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Notifications</h1>
+          <p class="text-slate-500 mt-1">Updates from your AI departments.</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+          ${notes.length === 0
+            ? `<div class="p-10 text-center text-slate-400">No notifications yet.</div>`
+            : notes.map(n => `
+              <div class="p-4 flex gap-3 ${n.read ? '' : 'bg-brand-50/50'}">
+                <div class="w-2 h-2 mt-2 rounded-full ${n.type==='success'?'bg-emerald-500':n.type==='error'?'bg-red-500':'bg-brand-500'} shrink-0"></div>
+                <div class="flex-1">
+                  <div class="text-sm font-medium">${n.msg}</div>
+                  <div class="text-xs text-slate-400 mt-0.5">${formatDate(n.time)}</div>
+                </div>
+              </div>
+            `).join('')
+          }
+        </div>
+      `, 'dashboard');
+    }
+
+    // ===================== ACTIONS =====================
+    function deployDept(id) {
+      const c = store.company();
+      const plan = PLANS[c.plan] || PLANS.free;
+      if (c.deployed.includes(id)) return;
+      if (c.deployed.length >= plan.depts) {
+        toast('Plan limit reached. Upgrade to deploy more.', 'error');
+        navigate('billing');
+        return;
+      }
+      c.deployed.push(id);
+      store.saveCompany(c);
+      const d = DEPARTMENTS[id];
+      store.addNotification(`${d.name} department deployed with ${d.employees.length} AI employees`, 'success');
+      store.recordTask(id, `${d.name} department activated and ready`);
+      toast(`${d.name} deployed successfully!`);
+      render();
+    }
+
+    function changePlan(planId) {
+      const c = store.company();
+      c.plan = planId;
+      store.saveCompany(c);
+      store.addNotification(`Plan changed to ${(PLANS[planId]||{}).name}`, 'success');
+      toast(`Switched to ${PLANS[planId].name} plan`);
+      render();
+    }
+
+    function toggleIntegration(id) {
+      const c = store.company();
+      c.integrations = c.integrations || [];
+      const idx = c.integrations.indexOf(id);
+      if (idx >= 0) {
+        c.integrations.splice(idx, 1);
+        toast('Integration disconnected');
+      } else {
+        c.integrations.push(id);
+        const name = INTEGRATIONS.find(i => i.id === id)?.name || id;
+        store.addNotification(`${name} connected`, 'success');
+        toast(`${name} connected`);
+      }
+      store.saveCompany(c);
+      render();
+    }
+
+    function removeTeamMember(idx) {
+      const c = store.company();
+      c.team.splice(idx, 1);
+      store.saveCompany(c);
+      toast('Team member removed');
+      render();
+    }
+
+    function simulateTask(deptId) {
+      const d = DEPARTMENTS[deptId];
+      const samples = {
+        sales: ['Qualified new inbound lead from website', 'Drafted proposal for Acme Corp', 'Scheduled discovery call with prospect'],
+        support: ['Resolved ticket #4821 automatically', 'Escalated complex billing issue to human', 'Generated weekly support summary'],
+        marketing: ['Published 3 social posts for product launch', 'Drafted blog post outline', 'Created email campaign sequence'],
+        hr: ['Screened 12 candidate applications', 'Scheduled 4 interviews for next week', 'Answered 8 employee policy questions'],
+        finance: ['Generated invoice INV-2026-0842', 'Flagged unusual expense report', 'Produced monthly budget variance report'],
+        operations: ['Assigned 6 tasks across project Alpha', 'Summarized standup meeting notes', 'Updated workflow status board']
+      };
+      const list = samples[deptId] || ['Completed routine AI task'];
+      const desc = list[Math.floor(Math.random() * list.length)];
+      store.recordTask(deptId, desc);
+      store.addNotification(`${d.name}: ${desc}`, 'info');
+      toast('AI task completed');
+      render();
+    }
+
+    function runWorkflow() {
+      const c = store.company();
+      const sequence = [
+        { dept: 'sales', msg: 'Sales AI qualified new lead "TechNova"' },
+        { dept: 'finance', msg: 'Finance AI generated quotation QT-8841' },
+        { dept: 'operations', msg: 'Operations AI created project "TechNova Onboarding"' },
+        { dept: 'support', msg: 'Support AI prepared customer onboarding checklist' }
+      ].filter(s => c.deployed.includes(s.dept));
+      if (sequence.length < 2) {
+        toast('Deploy at least 2 related departments to run workflow', 'info');
+        return;
+      }
+      sequence.forEach((s, i) => {
+        setTimeout(() => {
+          store.recordTask(s.dept, s.msg);
+          store.addNotification(s.msg, 'success');
+          if (i === sequence.length - 1) {
+            store.addNotification('Manager: Cross-department workflow completed', 'info');
+            toast('Workflow completed across departments!');
+            render();
+          }
+        }, i * 600);
+      });
+      toast('Running AI collaboration workflow…', 'info');
+    }
+
+    // ===================== BIND EVENTS =====================
+    function bindEvents() {
+      const signup = document.getElementById('signup-form');
+      if (signup) {
+        signup.onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(signup);
+          const company = fd.get('company').trim();
+          const email = fd.get('email').toLowerCase().trim();
+          const password = fd.get('password');
+          const users = store.users();
+          if (users[email]) {
+            toast('Account already exists. Please log in.', 'error');
+            return;
+          }
+          users[email] = { password, company };
+          store.saveUsers(users);
+          const c = defaultCompany();
+          c.name = company;
+          c.email = email;
+          store.saveCompany(c);
+          store.login(email);
+          store.addNotification('Welcome to Syshire! Complete your company setup.', 'success');
+          toast('Account created!', 'success');
+          navigate('setup');
+        };
+      }
+
+      const login = document.getElementById('login-form');
+      if (login) {
+        login.onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(login);
+          const email = fd.get('email').toLowerCase().trim();
+          const password = fd.get('password');
+          const users = store.users();
+          if (!users[email] || users[email].password !== password) {
+            toast('Invalid email or password', 'error');
+            return;
+          }
+          store.login(email);
+          let c = store.company();
+          if (!c || c.email !== email) {
+            c = defaultCompany();
+            c.name = users[email].company;
+            c.email = email;
+            store.saveCompany(c);
+          }
+          toast('Welcome back!');
+          if (!c.industry) navigate('setup');
+          else navigate('dashboard');
+        };
+      }
+
+      const setup = document.getElementById('setup-form');
+      if (setup) {
+        setup.onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(setup);
+          const c = store.company();
+          c.name = fd.get('name').trim();
+          c.industry = fd.get('industry');
+          c.size = fd.get('size');
+          c.country = fd.get('country').trim();
+          c.timezone = fd.get('timezone');
+          c.website = fd.get('website') || '';
+          store.saveCompany(c);
+          store.addNotification('Company profile completed', 'success');
+          toast('Setup complete!');
+          navigate('departments');
+        };
+      }
+
+      const settings = document.getElementById('settings-form');
+      if (settings) {
+        settings.onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(settings);
+          const c = store.company();
+          c.name = fd.get('name').trim();
+          c.industry = fd.get('industry');
+          c.size = fd.get('size');
+          c.country = fd.get('country').trim();
+          c.timezone = fd.get('timezone');
+          c.website = fd.get('website') || '';
+          store.saveCompany(c);
+          toast('Settings saved');
+          render();
+        };
+      }
+
+      const invite = document.getElementById('invite-form');
+      if (invite) {
+        invite.onsubmit = (e) => {
+          e.preventDefault();
+          const fd = new FormData(invite);
+          const email = fd.get('email').toLowerCase().trim();
+          const c = store.company();
+          c.team = c.team || [];
+          if (c.team.some(m => m.email === email)) {
+            toast('Already invited', 'error');
+            return;
+          }
+          c.team.push({ email, role: 'Member', invitedAt: new Date().toISOString() });
+          store.saveCompany(c);
+          store.addNotification(`Invitation sent to ${email}`, 'success');
+          toast('Invitation sent');
+          invite.reset();
+          render();
+        };
+      }
+    }
+
+    // ===================== RENDER =====================
+    function render() {
+      const app = document.getElementById('app');
+      const loggedIn = store.isLoggedIn();
+      const c = store.company();
+
+      if (!loggedIn && !['landing', 'signup', 'login'].includes(currentView)) {
+        currentView = 'landing';
+      }
+      if (loggedIn && ['landing', 'signup', 'login'].includes(currentView)) {
+        currentView = c?.industry ? 'dashboard' : 'setup';
+      }
+
+      let html = '';
+      switch (currentView) {
+        case 'landing': html = Landing(); break;
+        case 'signup': html = Signup(); break;
+        case 'login': html = Login(); break;
+        case 'setup': html = Setup(); break;
+        case 'departments': html = Departments(); break;
+        case 'department': html = DepartmentDetail(); break;
+        case 'dashboard': html = Dashboard(); break;
+        case 'billing': html = Billing(); break;
+        case 'integrations': html = Integrations(); break;
+        case 'admin': html = Admin(); break;
+        case 'settings': html = Settings(); break;
+        case 'notifications': html = Notifications(); break;
+        default: html = loggedIn ? Dashboard() : Landing();
+      }
+      app.innerHTML = html;
+      bindEvents();
+    }
+
+    window.navigate = navigate;
+    window.deployDept = deployDept;
+    window.changePlan = changePlan;
+    window.toggleIntegration = toggleIntegration;
+    window.removeTeamMember = removeTeamMember;
+    window.simulateTask = simulateTask;
+    window.runWorkflow = runWorkflow;
+    window.store = store;
+
+    (function init() {
+      const hash = window.location.hash.slice(1) || '';
+      if (hash) {
+        const [view, qs] = hash.split('?');
+        currentView = view || 'landing';
+        viewParams = Object.fromEntries(new URLSearchParams(qs || ''));
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
