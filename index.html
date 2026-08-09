@@ -1255,57 +1255,6 @@ testSupabaseConnection();
       }
       render();
     })();
-  </script>
-</script>
-window.addEventListener('load', async function () {
-
-  const box = document.createElement('div');
-
-  box.style.position = 'fixed';
-  box.style.top = '20px';
-  box.style.left = '20px';
-  box.style.right = '20px';
-  box.style.zIndex = '999999';
-  box.style.padding = '16px';
-  box.style.borderRadius = '12px';
-  box.style.background = '#111827';
-  box.style.color = 'white';
-  box.style.fontFamily = 'Arial, sans-serif';
-  box.style.fontWeight = 'bold';
-  box.style.textAlign = 'center';
-
-  box.textContent = '🔄 Testing Supabase...';
-
-  document.body.appendChild(box);
-
-  try {
-
-    const { data, error } = await supabaseClient
-      .from('organizations')
-      .select('*')
-      .limit(1);
-
-    if (error) {
-      box.style.background = '#991b1b';
-      box.textContent = '🔴 Supabase Error: ' + error.message;
-      console.error('SUPABASE ERROR:', error);
-      return;
-    }
-
-    box.style.background = '#166534';
-    box.textContent = '🟢 SUPABASE CONNECTED SUCCESSFULLY!';
-
-    console.log('SUPABASE SUCCESS:', data);
-
-  } catch (err) {
-
-    box.style.background = '#991b1b';
-    box.textContent = '🔴 Connection failed: ' + err.message;
-    console.error('SUPABASE FAILED:', err);
-
-  }
-
-});
 </script>
 
 </body>
