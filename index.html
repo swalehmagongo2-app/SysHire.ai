@@ -5,7 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Syshire — Deploy AI Departments in Minutes</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://nqzheisihfkxrafjcfou.supabase.co';
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    'sb_publishable_Zv5LN6xVegJnre30s2DUxg_HDs6nTaF';
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
+  console.log('Supabase client initialized');
+</script>
+
+<script>
     tailwind.config = {
       theme: {
         extend: {
