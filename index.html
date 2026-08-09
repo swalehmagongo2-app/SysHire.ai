@@ -20,6 +20,49 @@
   );
 
   console.log('Supabase client initialized');
+  async function testSupabaseConnection() {
+  const status = document.createElement('div');
+
+  status.style.position = 'fixed';
+  status.style.bottom = '20px';
+  status.style.left = '20px';
+  status.style.right = '20px';
+  status.style.zIndex = '99999';
+  status.style.padding = '15px';
+  status.style.borderRadius = '10px';
+  status.style.fontFamily = 'Arial, sans-serif';
+  status.style.fontSize = '14px';
+  status.style.fontWeight = 'bold';
+  status.style.background = '#111827';
+  status.style.color = 'white';
+
+  status.textContent = 'Testing Supabase connection...';
+
+  document.body.appendChild(status);
+
+  const { data, error } = await supabaseClient
+    .from('organizations')
+    .select('*')
+    .limit(1);
+
+  if (error) {
+    status.textContent = 'Supabase Error: ' + error.message;
+    status.style.background = '#991b1b';
+    console.error('Supabase error:', error);
+    return;
+  }
+
+  status.textContent = 'Supabase Connected Successfully!';
+  status.style.background = '#166534';
+
+  console.log('Supabase connection successful:', data);
+
+  setTimeout(() => {
+    status.remove();
+  }, 5000);
+}
+
+testSupabaseConnection();
 </script>
 
 <script>
