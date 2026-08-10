@@ -1106,91 +1106,38 @@ if (signup) {
     const password = fd.get('password');
 
     try {
-      // 1. Create the user in Supabase Auth
-      const { data: authData, error: authError } =
-        await supabaseClient.auth.signUp({
-          email: email,
-          password: password
-        });
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            company: company
+          }
+        }
+      });
 
-      if (authError) {
-        toast(authError.message, 'error');
-        console.error('Signup error:', authError);
+      if (error) {
+        console.error('Supabase signup error:', error);
+        toast(error.message, 'error');
         return;
       }
 
-      const user = authData.user;
-
-      if (!user) {
-        toast('Account could not be created.', 'error');
+      if (!data.user) {
+        toast('Account creation failed.', 'error');
         return;
       }
 
-      // 2. Create the organization
-      const { data: organization, error: organizationError } =
-        await supabaseClient
-          .from('organizations')
-          .insert({
-            name: company,
-            owner_id: user.id,
-            plan: 'free',
-            status: 'active'
-          })
-          .select()
-          .single();
-
-      if (organizationError) {
-        console.error('Organization error:', organizationError);
-        toast('User created, but company setup failed.', 'error');
-        return;
-      }
-
-      // 3. Create the profile
-      const { error: profileError } =
-        await supabaseClient
-          .from('profiles')
-          .insert({
-            id: user.id,
-            full_name: '',
-            email: email,
-            role: 'owner',
-            organization_id: organization.id
-          });
-
-      if (profileError) {
-        console.error('Profile error:', profileError);
-        toast('Profile setup failed.', 'error');
-        return;
-      }
-
-      // 4. Add the user as organization owner
-      const { error: memberError } =
-        await supabaseClient
-          .from('organization_members')
-          .insert({
-            organization_id: organization.id,
-            user_id: user.id,
-            role: 'owner',
-            status: 'active'
-          });
-
-      if (memberError) {
-        console.error('Membership error:', memberError);
-        toast('Organization membership setup failed.', 'error');
-        return;
-      }
-
-      // 5. Keep the local company object for the existing UI
+      // Save company temporarily for the existing UI
       const c = defaultCompany();
       c.name = company;
       c.email = email;
       c.plan = 'free';
       store.saveCompany(c);
 
-      // 6. Email confirmation is enabled in your Supabase project
-      if (!authData.session) {
+      // Email confirmation is enabled
+      if (!data.session) {
         toast(
-          'Account created! Check your email to confirm your account.',
+          'Account created! Check your email and confirm your account.',
           'success'
         );
 
@@ -1198,23 +1145,15 @@ if (signup) {
         return;
       }
 
-      // 7. If confirmation isn't required, continue normally
-      store.login(email);
-      store.addNotification(
-        'Welcome to Syshire! Complete your company setup.',
-        'success'
-      );
-
-      toast('Account created!', 'success');
+      toast('Account created successfully!', 'success');
       navigate('setup');
 
     } catch (error) {
-      console.error('Unexpected signup error:', error);
-      toast('Something went wrong during signup.', 'error');
+      console.error('Signup error:', error);
+      toast('Something went wrong. Please try again.', 'error');
     }
   };
-      }
-
+    }
       const login = document.getElementById('login-form');
       if (login) {
         login.onsubmit = (e) => {
