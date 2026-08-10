@@ -1149,10 +1149,12 @@ if (signup) {
       navigate('setup');
 
     } catch (error) {
-      console.error('Signup error:', error);
-      toast('Something went wrong. Please try again.', 'error');
-    }
-  };
+  console.error('SIGNUP ERROR:', error);
+
+  toast(
+    'ERROR: ' + (error?.message || String(error)),
+    'error'
+  );
     }
       const login = document.getElementById('login-form');
       if (login) {
