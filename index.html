@@ -19,6 +19,11 @@
     SUPABASE_PUBLISHABLE_KEY
   );
   console.log('Supabase client:', supabaseClient);
+  if (!supabaseClient) {
+  alert('Supabase client NOT loaded');
+} else {
+  alert('Supabase client loaded successfully');
+  }
 
   console.log('Supabase client initialized');
   async function document.addEventListener('DOMContentLoaded', testSupabaseConnection); {
